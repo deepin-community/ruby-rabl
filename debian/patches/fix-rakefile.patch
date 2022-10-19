@@ -1,0 +1,22 @@
+From: Daniel Leidert <dleidert@debian.org>
+Date: Sat, 27 Nov 2021 22:15:09 +0100
+Subject: Fix Rakefile
+
+Forwarded: fixed-upstream
+---
+ Rakefile | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/Rakefile b/Rakefile
+index e8068ae..c53b857 100644
+--- a/Rakefile
++++ b/Rakefile
+@@ -9,7 +9,7 @@ Rake::TestTask.new(:test) do |test|
+   test.pattern = 'test/*_test.rb'
+   test.warning = true
+   test.verbose = true
+-  test.ruby_opts = ['-rubygems']
++  test.ruby_opts = ['-rrubygems']
+ end
+ 
+ # Running integration tests

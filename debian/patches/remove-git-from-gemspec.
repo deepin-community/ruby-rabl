@@ -1,0 +1,22 @@
+From: Daniel Leidert <dleidert@debian.org>
+Date: Sat, 27 Nov 2021 22:30:07 +0100
+Subject: Remove git from gemspec
+
+Forwarded: not-needed
+---
+ rabl.gemspec | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/rabl.gemspec b/rabl.gemspec
+index 203b1fe..7e5114b 100644
+--- a/rabl.gemspec
++++ b/rabl.gemspec
+@@ -15,7 +15,7 @@ Gem::Specification.new do |s|
+ 
+   s.rubyforge_project = "rabl"
+ 
+-  s.files         = `git ls-files`.split("\n")
++  s.files         = Dir.glob("**/*").grep_v(%r{^(bin|debian|examples|fixtures|spec|test)/})
+   s.require_paths = ["lib"]
+ 
+ 

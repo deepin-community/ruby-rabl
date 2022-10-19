@@ -1,0 +1,71 @@
+From: Geremia Taglialatela <tagliala.dev@gmail.com>
+Date: Sat, 27 Nov 2021 12:10:16 +0100
+Subject: Fix arguments to allow Ruby 3.0 tests pass
+MIME-Version: 1.0
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 8bit
+
+A change in `rr` to support Ruby 3.0’s keyword arguments prevented some
+tests to pass against Ruby 3.0
+
+Ref: rr/rr@d6da2090f935cd60cefc7556bcbce9f7964e2be1
+
+Origin: https://github.com/nesquena/rabl/commit/17b5278047d5f7070413ad964edd96ed76b23ee5.patch
+Origin: https://github.com/nesquena/rabl/commit/cf5e38c6973946bed5bcff6f8d82a85e28b243cd.patch
+Origin: https://github.com/nesquena/rabl/pull/747
+Forwarded: not-needed
+Bug-Debian: https://bugs.debian.org/996350
+---
+ rabl.gemspec         | 2 +-
+ test/builder_test.rb | 4 ++--
+ test/engine_test.rb  | 2 +-
+ 3 files changed, 4 insertions(+), 4 deletions(-)
+
+diff --git a/rabl.gemspec b/rabl.gemspec
+index b6aa8ca..203b1fe 100644
+--- a/rabl.gemspec
++++ b/rabl.gemspec
+@@ -26,7 +26,7 @@ Gem::Specification.new do |s|
+   end
+ 
+   s.add_development_dependency 'riot',     '~> 0.12.3'
+-  s.add_development_dependency 'rr',       '~> 1.0.2'
++  s.add_development_dependency 'rr'
+   s.add_development_dependency 'rake'
+   s.add_development_dependency 'tilt'
+   s.add_development_dependency 'oj'
+diff --git a/test/builder_test.rb b/test/builder_test.rb
+index 2ee962b..9db2679 100644
+--- a/test/builder_test.rb
++++ b/test/builder_test.rb
+@@ -229,7 +229,7 @@ context "Rabl::Builder" do
+       b = builder nil, :glue => [{ :data => @user, :options => {}, :block => lambda { |u| attribute :name }}]
+       e = Rabl::Engine.new('')
+       mock(e).render.returns({:user => 'xyz'})
+-      mock(b).object_to_engine(@user, { :root => false }).returns(e).subject
++      mock(b).object_to_engine(@user, :root => false).returns(e).subject
+       b.to_hash(@user)
+     end.equivalent_to({ :user => 'xyz' })
+ 
+@@ -242,7 +242,7 @@ context "Rabl::Builder" do
+       b = builder nil, :glue => [{ :data => @user, :options => {}, :block => lambda { |u| attribute :name }}]
+       e = Rabl::Engine.new('')
+       mock(e).render.returns({})
+-      mock(b).object_to_engine(@user,{ :root => false }).returns(e).subject
++      mock(b).object_to_engine(@user, :root => false).returns(e).subject
+       b.to_hash(@user)
+     end.equals({})
+   end
+diff --git a/test/engine_test.rb b/test/engine_test.rb
+index b8eac45..13fca73 100644
+--- a/test/engine_test.rb
++++ b/test/engine_test.rb
+@@ -444,7 +444,7 @@ context "Rabl::Engine" do
+ 
+         any_instance_of(Rabl::Engine) do |b|
+           mock(b).fetch_source("foo/bar", :view_path => nil).once
+-          mock(b).object_to_engine(@user, :locals => { :foo => "bar" }, :source => nil, :source_location => nil, :template => 'foo/bar').returns(e)
++          mock(b).object_to_engine(@user, { :locals => { :foo => "bar" }, :source => nil, :source_location => nil, :template => 'foo/bar' }).returns(e)
+         end
+         JSON.parse(template.render(scope))
+       end.equals JSON.parse("{ \"foo\" : {\"name\":\"leo\",\"city\":\"LA\",\"age\":12} }")

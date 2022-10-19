@@ -1,0 +1,36 @@
+Description: From ruby-bson upstream changelog [1]:
+ 2.0.0
+ Backwards Incompatible Changes
+ ...
+ BSON.serialize is no longer the entry point to serialize a BSON
+ document into its raw bytes.
+ For Ruby runtimes that support ordered hashes, you may simply call
+ `to_bson` on the hash instance (Alternatively a `BSON::Document` is
+ also a hash:
+  { key: "value" }.to_bson
+  BSON::Document[:key, "value"].to_bson
+ For Ruby runtimes that do not support ordered hashes, then you must
+ instantiate an instance of a `BSON::Document` (which is a subclass of
+ hash) and call `to_bson` on that, since the BSON specification
+ guarantees order of the fields:
+  BSON::Document[:key, "value"].to_bson
+ .
+ [1] https://github.com/mongodb/bson-ruby/blob/master/CHANGELOG.md
+ .
+ This patch re-introduces BSON.serialize.
+Author: Gilles Filippini <pini@debian.org>
+Bug-Debian: https://bugs.debian.org/849315
+Index: ruby-rabl/lib/rabl/configuration.rb
+===================================================================
+--- ruby-rabl.orig/lib/rabl/configuration.rb
++++ ruby-rabl/lib/rabl/configuration.rb
+@@ -7,6 +7,9 @@ end
+ # We load the bson library if it is available.
+ begin
+   require 'bson'
++  def BSON.serialize data
++    data.to_bson
++  end
+ rescue LoadError
+ end
+ 

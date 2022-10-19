@@ -1,0 +1,107 @@
+From: Jolyon Pawlyn <jolyon@contentful.com>
+Date: Mon, 29 Apr 2019 11:50:02 +0200
+Subject: [PATCH] Make Rails 6 compatible
+
+Origin: https://github.com/nesquena/rabl/commit/023088d43a963941030e0fff55d6584c6fb3fa49.patch
+Bug: https://github.com/nesquena/rabl/pull/723
+Forwarded: not-needed
+---
+ lib/rabl.rb          |  6 +++---
+ lib/rabl/engine.rb   |  8 +++++---
+ lib/rabl/railtie.rb  |  2 +-
+ lib/rabl/template.rb | 22 +++++++++++++++++++++-
+ 4 files changed, 30 insertions(+), 8 deletions(-)
+
+diff --git a/lib/rabl.rb b/lib/rabl.rb
+index 396151f..0821963 100644
+--- a/lib/rabl.rb
++++ b/lib/rabl.rb
+@@ -17,9 +17,9 @@ require 'rabl/renderer'
+ require 'rabl/cache_engine'
+ 
+ if defined?(Rails) && Rails.respond_to?(:version)
+-  require 'rabl/tracker'  if Rails.version =~ /^[45]/
+-  require 'rabl/digestor' if Rails.version =~ /^[45]/
+-  require 'rabl/railtie'  if Rails.version =~ /^[345]/
++  require 'rabl/tracker'  if Rails.version =~ /^[456]/
++  require 'rabl/digestor' if Rails.version =~ /^[456]/
++  require 'rabl/railtie'  if Rails.version =~ /^[3456]/
+ end
+ 
+ # Rabl.register!
+diff --git a/lib/rabl/engine.rb b/lib/rabl/engine.rb
+index ebdfc96..a5db034 100644
+--- a/lib/rabl/engine.rb
++++ b/lib/rabl/engine.rb
+@@ -58,8 +58,10 @@ module Rabl
+         if digestor_available? && respond_to?(:lookup_context) && lookup_context
+           template = @_options[:template] || @virtual_path
+ 
+-          digest = \
+-            if Gem::Version.new(Rails.version) >= Gem::Version.new('4.1')
++          digest =
++            if Rails.version.to_s =~ /^[6]/
++              Digestor.digest(name: template, finder: lookup_context, format: :rabl)
++            elsif Gem::Version.new(Rails.version) >= Gem::Version.new('4.1')
+               Digestor.digest(:name => template, :finder => lookup_context)
+             else
+               Digestor.digest(template, :rabl, lookup_context)
+@@ -387,7 +389,7 @@ module Rabl
+       end
+ 
+       def digestor_available?
+-        defined?(Rails) && Rails.version =~ /^[45]/
++        defined?(Rails) && Rails.version =~ /^[456]/
+       end
+ 
+       def set_instance_variables!(context_scope, locals)
+diff --git a/lib/rabl/railtie.rb b/lib/rabl/railtie.rb
+index a937304..9273d52 100644
+--- a/lib/rabl/railtie.rb
++++ b/lib/rabl/railtie.rb
+@@ -5,7 +5,7 @@ module Rabl
+         Rabl.register!
+ 
+         # Inject dependency tracker for :rabl
+-        if Rails.version =~ /^[45]/
++        if Rails.version =~ /^[456]/
+           require 'action_view/dependency_tracker'
+           ActionView::DependencyTracker.register_tracker :rabl, Rabl::Tracker
+         end
+diff --git a/lib/rabl/template.rb b/lib/rabl/template.rb
+index 6cc8469..68be62a 100644
+--- a/lib/rabl/template.rb
++++ b/lib/rabl/template.rb
+@@ -40,7 +40,7 @@ if defined?(ActionView) && defined?(Rails) && Rails.respond_to?(:version) && Rai
+   ActionView::Template.register_template_handler :rabl, ActionView::TemplateHandlers::RablHandler
+ end
+ 
+-# Rails 3.X / 4.X Template
++# Rails 3.X / 4.X / 5.X Template
+ if defined?(ActionView) && defined?(Rails) && Rails.respond_to?(:version) && Rails.version.to_s =~ /^[345]/
+   module ActionView
+     module Template::Handlers
+@@ -61,3 +61,23 @@ if defined?(ActionView) && defined?(Rails) && Rails.respond_to?(:version) && Rai
+ 
+   ActionView::Template.register_template_handler :rabl, ActionView::Template::Handlers::Rabl
+ end
++
++# Rails 6.X Template
++if defined?(ActionView) && defined?(Rails) && Rails.respond_to?(:version) && Rails.version.to_s =~ /^[6]/
++  module ActionView
++    module Template::Handlers
++      class Rabl
++        class_attribute :default_format
++        self.default_format = :json
++
++        def self.call(template, source)
++          %{ ::Rabl::Engine.new(#{source.inspect}).
++              apply(self, assigns.merge(local_assigns)).
++              render }
++        end # call
++      end # rabl class
++    end # handlers
++  end
++
++  ActionView::Template.register_template_handler :rabl, ActionView::Template::Handlers::Rabl
++end

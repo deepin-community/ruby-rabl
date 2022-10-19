@@ -1,0 +1,5 @@
+def-bson-serialize.patch
+relax-rr-dependency.patch
+fix-rakefile.patch
+remove-git-from-gemspec.
+make-rails-6-compatible.patch
